@@ -1,0 +1,56 @@
+networks:
+  net-practica:
+    name: net-practica
+    driver: bridge
+
+services:
+  db-practica:
+    image: postgres
+    container_name: db-practica
+    restart: always
+    ports:
+      - "5433:5432"
+    networks:
+      - net-practica
+    environment:
+      POSTGRES_DB: parcial2_jmc24
+      POSTGRES_USER: usrparcial2
+      POSTGRES_PASSWORD: P4rc14L2-2024
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  backend-practica:
+    depends_on:
+      - db-practica
+    image: be-practica
+    container_name: api-practica
+    restart: unless-stopped
+    build:
+      context: ./be_p2_jmc
+    ports:
+      - 3001:3001
+    networks:
+      - net-practica
+    environment:
+      DB_HOST: db-practica
+    volumes:
+      - ./be_p2_jmc:/usr/src/app
+      - /usr/src/app/node_modules/
+
+  frontend-practica:
+    depends_on:
+        - backend-practica
+    image: fe-practica
+    container_name: app-practica
+    restart: unless-stopped
+    build:
+      context: ./fe_parcial2_jmc
+      dockerfile: Dockerfile
+    ports:
+      - 85:85
+    networks:
+      - net-practica
+    environment:
+      VITE_BASE_URL_ENDPOINT: backend-practica
+    volumes:
+      - /usr/src/app/node_modules/
